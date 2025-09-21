@@ -11,5 +11,22 @@ No settings to configure and no respring needed. Tested on iOS 11+ and compatibl
 ## Installation
 You can install the `.deb` manually or get it at this Cydia repo: https://n3d1117.github.io
 
+### Download Latest Release
+Pre-built `.deb` packages are automatically generated and available in the [Releases](https://github.com/yell0wsuit/noappthinning/releases) section.
+
+## Building
+This project uses THEOS for building. GitHub Actions automatically builds and releases `.deb` packages when tags are pushed.
+
+### Local Build
+If you want to build locally:
+1. Install THEOS following the [official guide](https://github.com/theos/theos/wiki/Installation)
+2. Clone this repository
+3. Run `make package`
+
+### Automated Builds
+- **Pull Requests**: Automatically builds to test changes
+- **Tagged Releases**: Creates releases with `.deb` files when tags matching `v*` are pushed
+- **Manual**: Can be triggered manually from the Actions tab
+
 ## Credits
 Credits: [level3tjg](https://twitter.com/level3tjg)
