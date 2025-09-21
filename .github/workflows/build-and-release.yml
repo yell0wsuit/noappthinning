@@ -109,7 +109,7 @@ jobs:
         
         # Build the package
         echo "Starting build..."
-        make package FINALPACKAGE=1
+        make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
         
         echo "Build completed. Checking results..."
         ls -la packages/
