@@ -1,0 +1,90 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup THEOS
+      run: |
+        # Install dependencies
+        sudo apt-get update
+        sudo apt-get install -y git make fakeroot rsync curl unzip build-essential
+        
+        # Install THEOS
+        export THEOS=/opt/theos
+        sudo git clone --recursive https://github.com/theos/theos.git $THEOS
+        
+        # Download iOS SDK (using a compatible version)
+        sudo mkdir -p $THEOS/sdks
+        sudo curl -LO https://github.com/theos/sdks/archive/master.zip
+        sudo unzip master.zip -d /tmp/
+        sudo cp -r /tmp/sdks-master/* $THEOS/sdks/
+        sudo rm -rf /tmp/sdks-master master.zip
+        
+        # Set up environment
+        echo "THEOS=/opt/theos" >> $GITHUB_ENV
+        echo "PATH=/opt/theos/bin:$PATH" >> $GITHUB_ENV
+        
+        # Make THEOS accessible and set proper ownership
+        sudo chown -R runner:runner $THEOS
+        sudo chmod -R 755 $THEOS
+    
+    - name: Clean build directory
+      run: |
+        export THEOS=/opt/theos
+        export PATH=/opt/theos/bin:$PATH
+        make clean || true
+    
+    - name: Build package
+      run: |
+        export THEOS=/opt/theos
+        export PATH=/opt/theos/bin:$PATH
+        make package
+    
+    - name: List generated packages
+      run: |
+        echo "Generated packages:"
+        ls -la packages/
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-package
+        path: packages/*.deb
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: packages/*.deb
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## NoAppThinning Release
+          
+          Cydia tweak to disable App Store app thinning on iOS 11+ devices.
+          
+          ### Installation
+          Download the `.deb` file and install it with your package manager.
+          
+          ### Compatibility
+          - iOS 11 and later
+          - iPhone 7+ and newer devices (arm64, arm64e support)
+          - Both rooted and rootless jailbreaks
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
