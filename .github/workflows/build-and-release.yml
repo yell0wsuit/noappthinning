@@ -105,7 +105,7 @@ jobs:
         ls -la $THEOS/sdks/ | grep -i iphone || echo "No iPhone SDKs found"
         
         # Set additional environment for cross-compilation (using closest available SDK to 11.0)
-        export TARGET=iphone:clang:11.4:11.0
+        export TARGET=iphone:clang:15.6:11.0
         
         # Build the package
         echo "Starting build..."
