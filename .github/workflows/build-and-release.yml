@@ -100,8 +100,12 @@ jobs:
         which clang
         ls -la $THEOS/toolchain/linux/iphone/bin/
         
-        # Set additional environment for cross-compilation
-        export TARGET=iphone:clang:11.0:11.0
+        # List available SDKs
+        echo "Available SDKs:"
+        ls -la $THEOS/sdks/ | grep -i iphone || echo "No iPhone SDKs found"
+        
+        # Set additional environment for cross-compilation (using closest available SDK to 11.0)
+        export TARGET=iphone:clang:11.4:11.0
         
         # Build the package
         echo "Starting build..."
