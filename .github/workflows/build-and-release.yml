@@ -22,7 +22,21 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        sudo apt-get install -y git make fakeroot rsync curl unzip build-essential
+        sudo apt-get install -y git make fakeroot rsync curl unzip build-essential \
+          clang perl python3 python3-pip
+        
+        # Try to install ldid, fallback if not available
+        sudo apt-get install -y ldid || echo "ldid not available in repo, will use alternative"
+        
+        # Install ldid from source if not available
+        if ! which ldid; then
+          echo "Installing ldid from source..."
+          git clone https://github.com/daeken/ldid.git /tmp/ldid
+          cd /tmp/ldid
+          ./make.sh
+          sudo cp ldid /usr/local/bin/
+          cd -
+        fi
         
         # Install THEOS
         export THEOS=/opt/theos
@@ -35,6 +49,10 @@ jobs:
         sudo cp -r /tmp/sdks-master/* $THEOS/sdks/
         sudo rm -rf /tmp/sdks-master master.zip
         
+        # Verify SDK installation
+        echo "Available SDKs:"
+        ls -la $THEOS/sdks/
+        
         # Set up environment
         echo "THEOS=/opt/theos" >> $GITHUB_ENV
         echo "PATH=/opt/theos/bin:$PATH" >> $GITHUB_ENV
@@ -42,6 +60,12 @@ jobs:
         # Make THEOS accessible and set proper ownership
         sudo chown -R runner:runner $THEOS
         sudo chmod -R 755 $THEOS
+        
+        # Verify THEOS installation
+        echo "THEOS makefiles:"
+        ls -la $THEOS/makefiles/
+        echo "THEOS bin:"
+        ls -la $THEOS/bin/
     
     - name: Clean build directory
       run: |
@@ -53,7 +77,23 @@ jobs:
       run: |
         export THEOS=/opt/theos
         export PATH=/opt/theos/bin:$PATH
-        make package
+        
+        # Debug environment
+        echo "THEOS: $THEOS"
+        echo "PATH: $PATH"
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
+        
+        # Check THEOS environment
+        which logos.pl || echo "logos.pl not found in PATH"
+        
+        # Build the package
+        echo "Starting build..."
+        make package FINALPACKAGE=1
+        
+        echo "Build completed. Checking results..."
+        ls -la packages/
     
     - name: List generated packages
       run: |
