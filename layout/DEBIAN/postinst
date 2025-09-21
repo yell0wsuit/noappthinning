@@ -1,9 +1,7 @@
 #!/bin/sh
 echo "Reloading services..."
-launchctl unload /System/Library/LaunchDaemons/com.apple.appstored.plist
-launchctl unload /System/Library/LaunchDaemons/com.apple.itunesstored.plist
-sleep 1
-launchctl load /System/Library/LaunchDaemons/com.apple.appstored.plist
-launchctl load /System/Library/LaunchDaemons/com.apple.itunesstored.plist
+# Use kickstart which works on both rooted and rootless jailbreaks
+launchctl kickstart -k system/com.apple.appstored
+launchctl kickstart -k system/com.apple.itunesstored
 echo "Reloaded services."
 exit 0
