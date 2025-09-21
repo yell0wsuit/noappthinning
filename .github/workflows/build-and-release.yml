@@ -11,120 +11,37 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Setup THEOS
       run: |
-        # Install dependencies including cross-compilation tools
-        sudo apt-get update
-        sudo apt-get install -y git make fakeroot rsync curl unzip build-essential \
-          clang perl python3 python3-pip xz-utils
-        
-        # Try to install ldid, fallback if not available
-        sudo apt-get install -y ldid || echo "ldid not available in repo, will use alternative"
-        
-        # Install ldid from source if not available
-        if ! which ldid; then
-          echo "Installing ldid from source..."
-          git clone https://github.com/daeken/ldid.git /tmp/ldid
-          cd /tmp/ldid
-          ./make.sh
-          sudo cp ldid /usr/local/bin/
-          cd -
-        fi
-        
-        # Install THEOS
-        export THEOS=/opt/theos
-        sudo git clone --recursive https://github.com/theos/theos.git $THEOS
-        
-        # Create toolchain symlink to use system clang
-        sudo mkdir -p $THEOS/toolchain/linux/iphone/bin
-        sudo ln -sf /usr/bin/clang $THEOS/toolchain/linux/iphone/bin/clang
-        sudo ln -sf /usr/bin/clang++ $THEOS/toolchain/linux/iphone/bin/clang++
-        
-        # Download iOS SDK (using a compatible version)
-        sudo mkdir -p $THEOS/sdks
-        sudo curl -LO https://github.com/theos/sdks/archive/master.zip
-        sudo unzip master.zip -d /tmp/
-        sudo cp -r /tmp/sdks-master/* $THEOS/sdks/
-        sudo rm -rf /tmp/sdks-master master.zip
-        
-        # Verify SDK installation
-        echo "Available SDKs:"
-        ls -la $THEOS/sdks/
-        
-        # Set up environment
+        brew install ldid make
+        sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
         echo "THEOS=/opt/theos" >> $GITHUB_ENV
         echo "PATH=/opt/theos/bin:$PATH" >> $GITHUB_ENV
-        
-        # Make THEOS accessible and set proper ownership
-        sudo chown -R runner:runner $THEOS
-        sudo chmod -R 755 $THEOS
-        
-        # Verify THEOS installation
-        echo "THEOS makefiles:"
-        ls -la $THEOS/makefiles/
-        echo "THEOS bin:"
-        ls -la $THEOS/bin/
-        echo "THEOS toolchain:"
-        ls -la $THEOS/toolchain/ || echo "No toolchain directory found"
-        echo "Checking for clang:"
-        ls -la $THEOS/toolchain/linux/iphone/bin/ || echo "No toolchain bin found"
-    
+
     - name: Clean build directory
       run: |
-        export THEOS=/opt/theos
-        export PATH=/opt/theos/bin:$PATH
         make clean || true
-    
+
     - name: Build package
       run: |
-        export THEOS=/opt/theos
-        export PATH=/opt/theos/bin:$PATH
-        
-        # Debug environment
-        echo "THEOS: $THEOS"
-        echo "PATH: $PATH"
-        echo "Current directory: $(pwd)"
-        echo "Files in current directory:"
-        ls -la
-        
-        # Check THEOS environment
-        which logos.pl || echo "logos.pl not found in PATH"
-        echo "Checking clang availability:"
-        which clang
-        ls -la $THEOS/toolchain/linux/iphone/bin/
-        
-        # List available SDKs
-        echo "Available SDKs:"
-        ls -la $THEOS/sdks/ | grep -i iphone || echo "No iPhone SDKs found"
-        
-        # Set additional environment for cross-compilation (using closest available SDK to 11.0)
-        export TARGET=iphone:clang:15.6:11.0
-        
-        # Build the package
         echo "Starting build..."
         make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
-        
         echo "Build completed. Checking results..."
         ls -la packages/
-    
-    - name: List generated packages
-      run: |
-        echo "Generated packages:"
-        ls -la packages/
-    
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: deb-package
         path: packages/*.deb
-    
+
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
@@ -144,6 +61,6 @@ jobs:
           ### Compatibility
           - iOS 11 and later
           - iPhone 7+ and newer devices (arm64, arm64e support)
-          - Both rooted and rootless jailbreaks
+          - Rootless jailbreaks (Dopamine, etc.)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
