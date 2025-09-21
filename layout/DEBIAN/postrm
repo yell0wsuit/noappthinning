@@ -1,5 +1,6 @@
 #!/bin/sh
 echo "Reloading services..."
 launchctl kickstart -k system/com.apple.itunesstored
+launchctl kickstart -k system/com.apple.appstored
 echo "Reloaded services."
 exit 0

@@ -18,5 +18,7 @@
 	</dict>
 	<key>SupportsRoot</key>
 	<string>1</string>
+	<key>SupportsRootless</key>
+	<string>1</string>
 </dict>
 </plist>
